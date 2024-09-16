@@ -2,6 +2,6 @@
 *.iml
 .git/
 .gradle
-gradle
+../external/gradle
 out/
-Dockerfile
+../Dockerfile

@@ -1,6 +1,5 @@
-from sqlalchemy import Column, String, DateTime, Enum, ForeignKey
+from sqlalchemy import Column, String, DateTime, Enum, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .database import Base
 import enum
@@ -25,28 +24,43 @@ class Organization(Base):
     updated_at = Column(DateTime, server_default=func.now())
 
 
-# Определение перечислений (Enum) для типов организации и статусов
-class OrganizationType(str, enum.Enum):
-    IE = 'IE'
-    LLC = 'LLC'
-    JSC = 'JSC'
-
-
 class TenderStatus(str, enum.Enum):
-    CREATED = "CREATED"
-    PUBLISHED = "PUBLISHED"
-    CLOSED = "CLOSED"
+    Created = "Created"
+    Published = "Published"
+    Closed = "Closed"
+
+
+class TenderServiceType(str, enum.Enum):
+    Construction = "Construction"
+    Delivery = "Delivery"
+    Manufacture = "Manufacture"
+
+
+class TenderHistory(Base):
+    __tablename__ = 'tender_history'
+
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.uuid_generate_v4())
+    tender_id = Column(UUID(as_uuid=True), ForeignKey('tender.id', ondelete='CASCADE'))
+    name = Column(String(100), nullable=True)
+    description = Column(String, nullable=True)
+    service_type = Column(String(50), nullable=True)
+    status = Column(String(50), nullable=True)
+    organization_id = Column(UUID, nullable=True)
+    creator_username = Column(String(50), nullable=True)
+    version = Column(Integer, nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False)
 
 
 class BidStatus(str, enum.Enum):
-    CREATED = "CREATED"
-    PUBLISHED = "PUBLISHED"
-    CANCELED = "CANCELED"
+    Created = "Created"
+    Published = "Published"
+    Canceled = "Canceled"
 
 
 class DecisionType(str, enum.Enum):
-    APPROVED = 'Approved'
-    REJECTED = 'Rejected'
+    Approved = 'Approved'
+    Rejected = 'Rejected'
 
 
 # Модель сотрудника (Employee)
@@ -77,10 +91,11 @@ class Tender(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.uuid_generate_v4())
     name = Column(String(100), nullable=False)
     description = Column(String, nullable=False)
-    service_type = Column(String(50))
-    status = Column(Enum(TenderStatus), nullable=False, default=TenderStatus.CREATED)
+    service_type = Column(Enum(TenderServiceType, name='tender_service_type'), nullable=False)
+    status = Column(Enum(TenderStatus, name='tender_status'), nullable=False, default=TenderStatus.Created)
     organization_id = Column(UUID(as_uuid=True), ForeignKey('organization.id'))
     creator_username = Column(String(50), ForeignKey('employee.username'))
+    version = Column(Integer(), nullable=False, default=1)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now())
 
@@ -92,7 +107,7 @@ class Bid(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.uuid_generate_v4())
     name = Column(String(100), nullable=False)
     description = Column(String, nullable=False)
-    status = Column(Enum(BidStatus), nullable=False, default=BidStatus.CREATED)
+    status = Column(Enum(BidStatus), nullable=False, default=BidStatus.Created)
     tender_id = Column(UUID(as_uuid=True), ForeignKey('tender.id'))
     organization_id = Column(UUID(as_uuid=True), ForeignKey('organization.id'))
     creator_username = Column(String(50), ForeignKey('employee.username'))
